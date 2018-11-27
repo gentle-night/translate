@@ -1,0 +1,208 @@
+""" The core's core. """
+
+from __future__ import print_function, division
+
+
+
+# used for canonical ordering of symbolic sequences  用于符号序列的规范排序
+
+# via __cmp__ method:
+
+# FIXME this is *so* irrelevant and outdated!
+
+ordering_of_classes = [  #数据类型
+
+    # singleton numbers  单例，
+
+    'Zero', 'One', 'Half', 'Infinity', 'NaN', 'NegativeOne', 'NegativeInfinity',
+
+    # numbers    数值类型
+
+    'Integer', 'Rational', 'Float',  #整数，有理数，浮点数
+
+    # singleton symbols 单例的符号
+
+    'Exp1', 'Pi', 'ImaginaryUnit', #虚数单位
+
+    # symbols  符号
+
+    'Symbol', 'Wild', 'Temporary',
+
+    # arithmetic operations   #算术运算
+
+    'Pow', 'Mul', 'Add',   #幂，乘，加 运算
+
+    # function values      #函数求值
+
+    'Derivative', 'Integral',  #导数，积分
+
+    # defined singleton functions  #定义单例函数
+
+    'Abs', 'Sign', 'Sqrt',
+
+    'Floor', 'Ceiling',
+
+    'Re', 'Im', 'Arg',
+
+    'Conjugate',
+
+    'Exp', 'Log',
+
+    'Sin', 'Cos', 'Tan', 'Cot', 'ASin', 'ACos', 'ATan', 'ACot',
+
+    'Sinh', 'Cosh', 'Tanh', 'Coth', 'ASinh', 'ACosh', 'ATanh', 'ACoth',
+
+    'RisingFactorial', 'FallingFactorial',
+
+    'factorial', 'binomial',
+
+    'Gamma', 'LowerGamma', 'UpperGamma', 'PolyGamma',
+
+    'Erf',
+
+    # special polynomials  特殊多项式
+
+    'Chebyshev', 'Chebyshev2',   #切比雪夫多项式
+
+    # undefined functions   未定义函数
+
+    'Function', 'WildFunction',
+
+    # anonymous functions 匿名函数
+
+    'Lambda',
+
+    # Landau O symbol
+
+    'Order',
+
+    # relational operations  关系运算
+
+    'Equality', 'Unequality', 'StrictGreaterThan', 'StrictLessThan', #相等，不等，严格大于，严格小于
+
+    'GreaterThan', 'LessThan',  #大于，小于
+
+]
+
+
+
+
+
+class Registry(object):  #注册表
+
+    """
+
+    Base class for registry objects. 注册表是基类
+
+
+
+    Registries map a name to an object using attribute notation. Registry
+
+    classes behave singletonically: all their instances share the same state,
+
+    which is stored in the class object.
+
+    注册中心使用属性符号将名称映射到对象。
+    注册表类的行为是单一的:它们的所有实例都共享相同的状态，它存储在类对象中。
+
+    All subclasses should set `__slots__ = []`.
+
+    """
+
+    __slots__ = []
+
+
+
+    def __setattr__(self, name, obj):    #setattr() 函数对应函数 getattr()，用于设置属性值，该属性必须存在。
+
+        setattr(self.__class__, name, obj)
+
+
+
+    def __delattr__(self, name):
+
+        delattr(self.__class__, name)
+
+
+
+#A set containing all sympy class objects
+
+all_classes = set()   #包含所有sympy类对象的集合
+
+
+
+
+
+class BasicMeta(type):  #基本目标
+
+
+
+    def __init__(cls, *args, **kws):
+
+        all_classes.add(cls)
+
+
+
+    def __cmp__(cls, other):
+
+        # If the other object is not a Basic subclass（子类）, then we are not equal to
+
+        # it.
+
+        if not isinstance(other, BasicMeta):
+
+            return -1
+
+        n1 = cls.__name__
+
+        n2 = other.__name__
+
+        if n1 == n2:
+
+            return 0
+
+
+
+        UNKNOWN = len(ordering_of_classes) + 1
+
+        try:
+
+            i1 = ordering_of_classes.index(n1)
+
+        except ValueError:
+
+            i1 = UNKNOWN
+
+        try:
+
+            i2 = ordering_of_classes.index(n2)
+
+        except ValueError:
+
+            i2 = UNKNOWN
+
+        if i1 == UNKNOWN and i2 == UNKNOWN:
+
+            return (n1 > n2) - (n1 < n2)
+
+        return (i1 > i2) - (i1 < i2)
+
+
+
+    def __lt__(cls, other):
+
+        if cls.__cmp__(other) == -1:
+
+            return True
+
+        return False
+
+
+
+    def __gt__(cls, other):
+
+        if cls.__cmp__(other) == 1:
+
+            return True
+
+        return False
